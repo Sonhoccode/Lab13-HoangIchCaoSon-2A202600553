@@ -5,10 +5,13 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.deps/
+tmp/
 *.egg-info/
 .pytest_cache/
 logs/
 traces/
+solution/telemetry.jsonl
 *.db
 run_output.json
 score.json

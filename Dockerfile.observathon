@@ -1,0 +1,12 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+ENV PYTHONPATH=/opt/observathon-deps
+
+RUN apt-get update -qq \
+    && apt-get install -y -qq --no-install-recommends python3 python3-pip ca-certificates \
+    && python3 -m pip install -q --break-system-packages --no-cache-dir -t /opt/observathon-deps openai \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /lab

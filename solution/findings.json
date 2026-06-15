@@ -1,12 +1,56 @@
 {
-  "team": "TODO-team-name",
+  "team": "hson",
   "schema_version": 1,
   "findings": [
     {
-      "fault_class": "latency_spike",
-      "evidence": {"metric": "latency_p95_ms", "observed": "TODO from your telemetry", "trace_ids": []},
-      "root_cause": "TODO: what config knob or behavior causes it?",
-      "suggested_fix": "TODO: config change and/or wrapper mitigation"
+      "fault_class": "arithmetic_error",
+      "evidence": {
+        "metric": "wrong_total_rate",
+        "observed": "Public run had 66/120 correct; telemetry showed many answers with totals that disagreed with tool observations.",
+        "trace_ids": ["pub-004", "pub-037", "pub-102"]
+      },
+      "root_cause": "The model was doing final arithmetic in free text instead of enforcing the subtotal, floor discount, and shipping formula.",
+      "suggested_fix": "Wrapper recomputes totals from check_stock/get_discount/calc_shipping trace observations and replaces the final answer."
+    },
+    {
+      "fault_class": "tool_overuse",
+      "evidence": {
+        "metric": "unneeded_tool_calls",
+        "observed": "Out-of-stock requests still called discount and shipping tools before refusing.",
+        "trace_ids": ["prac-010", "pub-001", "pub-019"]
+      },
+      "root_cause": "Prompt did not strongly stop the agent after check_stock showed unavailable inventory.",
+      "suggested_fix": "Prompt now says stop after not found/out of stock/insufficient quantity; config caps tool_budget at 3."
+    },
+    {
+      "fault_class": "pii_leak",
+      "evidence": {
+        "metric": "answer_contains_contact_data",
+        "observed": "Some questions included emails or phone numbers and earlier answers echoed contact context.",
+        "trace_ids": ["pub-010", "pub-014", "pub-063"]
+      },
+      "root_cause": "The model treated contact information as conversational context and repeated it in answers.",
+      "suggested_fix": "Config enables redact_pii; prompt forbids repeating PII; wrapper redacts email/phone fallback answers."
+    },
+    {
+      "fault_class": "cost_blowup",
+      "evidence": {
+        "metric": "cost_subscore",
+        "observed": "Public score showed cost=0.0 with high token usage in telemetry.",
+        "trace_ids": ["pub-001"]
+      },
+      "root_cause": "Verbose completions, retry, larger context, and premium price tier inflated measured cost.",
+      "suggested_fix": "Reduced max_completion_tokens/context, disabled retry, set cheap tier, shortened prompt, and postprocessed concise answers."
+    },
+    {
+      "fault_class": "prompt_injection",
+      "evidence": {
+        "metric": "private_risk",
+        "observed": "Rules warn that private order notes include fake system prices or instructions.",
+        "trace_ids": []
+      },
+      "root_cause": "Order notes can be misread as instructions unless explicitly treated as untrusted data.",
+      "suggested_fix": "Prompt instructs the agent to treat notes/quotes/GHI CHU as data only and to use prices only from tools."
     }
   ]
 }
